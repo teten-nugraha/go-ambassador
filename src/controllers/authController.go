@@ -25,15 +25,13 @@ func Register(c *fiber.Ctx) error {
 		})
 	}
 
-	password, _ := bcrypt.GenerateFromPassword([]byte(data["password"]), 12)
-
 	user := models.User{
 		FirstName:    data["first_name"],
 		LastName:     data["last_name"],
 		Email:        data["email"],
-		Password:     password,
 		IsAmbassador: false,
 	}
+	user.SetPassword(data["password"])
 
 	database.DB.Create(&user)
 
