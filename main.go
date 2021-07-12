@@ -2,6 +2,7 @@ package main
 
 import (
 	"ambassador/src/database"
+	"ambassador/src/routes"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
@@ -16,9 +17,7 @@ func main() {
 	// Default middleware config
 	app.Use(logger.New())
 
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
-	})
+	routes.Setup(app)
 
 	app.Listen(":3000")
 }

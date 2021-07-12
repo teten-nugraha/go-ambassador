@@ -7,4 +7,5 @@ RUN go mod download
 
 COPY . .
 
+
 CMD ["go","run","main.go"]
