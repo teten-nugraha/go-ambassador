@@ -1,6 +1,11 @@
 package models
 
-import "golang.org/x/crypto/bcrypt"
+import (
+	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/crypto/bcrypt"
+	"strconv"
+	"time"
+)
 
 type User struct {
 	Id           uint
@@ -18,4 +23,16 @@ func (user *User) SetPassword(password string) {
 
 func (user *User) ComparePassword(password string) error {
 	return bcrypt.CompareHashAndPassword(user.Password, []byte(password))
+}
+
+func GeneratePayload(userId uint) (string, error) {
+
+	payload := jwt.StandardClaims{
+		Subject:   strconv.Itoa(int(userId)),
+		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+	}
+
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, payload).SignedString([]byte("secret"))
+
+	return token, err
 }
