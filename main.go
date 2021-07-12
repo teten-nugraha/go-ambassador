@@ -3,9 +3,9 @@ package main
 import (
 	"ambassador/src/database"
 	"ambassador/src/routes"
+	"ambassador/src/utils"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
 func main() {
@@ -14,10 +14,7 @@ func main() {
 	database.AutoMigrate()
 
 	app := fiber.New()
-
-	// Default middlewares config
-	app.Use(logger.New())
-
+	utils.AddLogger(app)
 	app.Use(cors.New(cors.Config{
 		AllowCredentials: true,
 	}))
