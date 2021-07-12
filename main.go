@@ -15,7 +15,7 @@ func main() {
 
 	app := fiber.New()
 
-	// Default middleware config
+	// Default middlewares config
 	app.Use(logger.New())
 
 	app.Use(cors.New(cors.Config{
