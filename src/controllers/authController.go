@@ -5,6 +5,7 @@ import (
 	"ambassador/src/middlewares"
 	"ambassador/src/models"
 	"github.com/gofiber/fiber/v2"
+	"strings"
 	"time"
 )
 
@@ -27,7 +28,7 @@ func Register(c *fiber.Ctx) error {
 		FirstName:    data["first_name"],
 		LastName:     data["last_name"],
 		Email:        data["email"],
-		IsAmbassador: false,
+		IsAmbassador: strings.Contains(c.Path(),"api/ambassador"),
 	}
 	user.SetPassword(data["password"])
 
@@ -61,7 +62,7 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	token, err := models.GeneratePayload(user.Id)
+	token, err := middlewares.GenerateJWT(user.Id)
 	if err != nil {
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{
