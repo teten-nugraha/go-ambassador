@@ -62,7 +62,24 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	token, err := middlewares.GenerateJWT(user.Id)
+	isAmbassador := strings.Contains(c.Path(),"/api/ambassador")
+
+	var scope string
+
+	if isAmbassador {
+		scope = "ambassador"
+	}else{
+		scope = "admin"
+	}
+
+	if !isAmbassador && user.IsAmbassador {
+		c.Status(fiber.StatusUnauthorized)
+		return c.JSON(fiber.Map{
+			"message" : "unauthorized",
+		})
+	}
+
+	token, err := middlewares.GenerateJWT(user.Id, scope)
 	if err != nil {
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{
