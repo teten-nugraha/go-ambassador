@@ -19,7 +19,7 @@ type ClaimsWithScope struct {
 func IsAuthenticated(c *fiber.Ctx) error {
 	cookie := c.Cookies("jwt")
 
-	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token)(interface{}, error) {
+	token, err := jwt.ParseWithClaims(cookie, &ClaimsWithScope{}, func(token *jwt.Token)(interface{}, error) {
 		return []byte(SecretKey), nil
 	})
 
@@ -44,16 +44,15 @@ func IsAuthenticated(c *fiber.Ctx) error {
 
 }
 
-func GenerateJWT(userId uint, scope string) (string, error) {
+func GenerateJWT(id uint, scope string) (string, error) {
 
 	payload := ClaimsWithScope{}
-	payload.Subject = strconv.Itoa(int(userId))
+	payload.Subject = strconv.Itoa(int(id))
 	payload.ExpiresAt = time.Now().Add(time.Hour * 24).Unix()
 	payload.Scope = scope
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, payload).SignedString([]byte(SecretKey))
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, payload).SignedString([]byte(SecretKey))
 
-	return token, err
 }
 
 
@@ -61,7 +60,7 @@ func GenerateJWT(userId uint, scope string) (string, error) {
 func GetUserId(c *fiber.Ctx) (uint, error) {
 	cookie := c.Cookies("jwt")
 
-	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token)(interface{}, error) {
+	token, err := jwt.ParseWithClaims(cookie, &ClaimsWithScope{}, func(token *jwt.Token)(interface{}, error) {
 		return []byte(SecretKey), nil
 	})
 
@@ -69,7 +68,7 @@ func GetUserId(c *fiber.Ctx) (uint, error) {
 		return 0, err
 	}
 
-	payload := token.Claims.(*jwt.StandardClaims)
+	payload := token.Claims.(*ClaimsWithScope)
 
 	id,_ := strconv.Atoi(payload.Subject)
 
