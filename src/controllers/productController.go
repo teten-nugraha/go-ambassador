@@ -50,7 +50,7 @@ func UpdateProduct(c *fiber.Ctx) error {
 	id, _ := strconv.Atoi(c.Params("id"))
 
 	product := models.Product{
-		Id:          uint(id),
+		Id: uint(id),
 	}
 
 	if err := c.BodyParser(&product); err != nil {
@@ -66,7 +66,7 @@ func DeleteProduct(c *fiber.Ctx) error {
 	id, _ := strconv.Atoi(c.Params("id"))
 
 	product := models.Product{
-		Id:          uint(id),
+		Id: uint(id),
 	}
 
 	database.DB.Delete(&product)
@@ -77,12 +77,12 @@ func DeleteProduct(c *fiber.Ctx) error {
 }
 
 func PopulateProducts(c *fiber.Ctx) error {
-	for i:=0; i < 30; i++ {
+	for i := 0; i < 30; i++ {
 		product := models.Product{
 			Title:       faker.Username(),
 			Description: faker.Username(),
 			Image:       faker.URL(),
-			Price:       float64(rand.Intn(90)+10),
+			Price:       float64(rand.Intn(90) + 10),
 		}
 
 		database.DB.Create(&product)
@@ -93,8 +93,8 @@ func PopulateProducts(c *fiber.Ctx) error {
 	})
 }
 
-func ProductsFrontend(c *fiber.Ctx) error{
-	var products [] models.Product
+func ProductsFrontend(c *fiber.Ctx) error {
+	var products []models.Product
 	var ctx = context.Background()
 
 	result, err := database.Cache.Get(ctx, "products_frontend").Result()
@@ -113,15 +113,15 @@ func ProductsFrontend(c *fiber.Ctx) error{
 		if errKey := database.Cache.Set(ctx, "products_frontend", bytes, 30*time.Minute).Err(); errKey != nil {
 			panic(errKey)
 		}
-	}else{
+	} else {
 		json.Unmarshal([]byte(result), &products)
 	}
 
 	return c.JSON(products)
 }
 
-func ProductsBackend(c *fiber.Ctx) error{
-	var products [] models.Product
+func ProductsBackend(c *fiber.Ctx) error {
+	var products []models.Product
 	var ctx = context.Background()
 
 	result, err := database.Cache.Get(ctx, "products_backend").Result()
@@ -139,21 +139,21 @@ func ProductsBackend(c *fiber.Ctx) error{
 
 		database.Cache.Set(ctx, "products_backend", bytes, 30*time.Minute)
 
-	}else{
+	} else {
 		json.Unmarshal([]byte(result), &products)
 	}
 
-	var searchedProducts [] models.Product
+	var searchedProducts []models.Product
 
 	if s := c.Query("s"); s != "" {
 		lower := strings.ToLower(s)
 		for _, prodct := range products {
 			if strings.Contains(strings.ToLower(prodct.Title), lower) ||
-				strings.Contains(prodct.Description, lower){
+				strings.Contains(prodct.Description, lower) {
 				searchedProducts = append(searchedProducts, prodct)
 			}
 		}
-	}else{
+	} else {
 		searchedProducts = products
 	}
 
@@ -163,13 +163,31 @@ func ProductsBackend(c *fiber.Ctx) error{
 			sort.Slice(searchedProducts, func(i, j int) bool {
 				return searchedProducts[i].Price < searchedProducts[j].Price
 			})
-		}else if sortLower == "desc" {
+		} else if sortLower == "desc" {
 			sort.Slice(searchedProducts, func(i, j int) bool {
 				return searchedProducts[i].Price > searchedProducts[j].Price
 			})
 		}
 	}
 
-	return c.JSON(searchedProducts)
-}
+	var total = len(searchedProducts)
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	perPage := 9
 
+	var data []models.Product
+
+	if total <= page*perPage && total >= (page-1)*perPage {
+		data = searchedProducts[(page-1)*perPage : total]
+	} else if total >= page*perPage {
+		data = searchedProducts[(page-1)*perPage : page*perPage]
+	} else {
+		data = []models.Product{}
+	}
+
+	return c.JSON(fiber.Map{
+		"data":      data,
+		"total":     total,
+		"page":      page,
+		"last_page": total/perPage + 1,
+	})
+}
