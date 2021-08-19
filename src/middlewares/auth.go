@@ -55,8 +55,6 @@ func GenerateJWT(id uint, scope string) (string, error) {
 
 }
 
-
-
 func GetUserId(c *fiber.Ctx) (uint, error) {
 	cookie := c.Cookies("jwt")
 

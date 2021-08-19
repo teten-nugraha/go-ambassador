@@ -3,10 +3,13 @@ package controllers
 import (
 	"ambassador/src/database"
 	"ambassador/src/models"
+	"context"
+	"encoding/json"
 	"github.com/bxcodec/faker/v3"
 	"github.com/gofiber/fiber/v2"
 	"math/rand"
 	"strconv"
+	"time"
 )
 
 func Products(c *fiber.Ctx) error {
@@ -86,4 +89,31 @@ func PopulateProducts(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "success generated products",
 	})
+}
+
+func ProductsFrontend(c *fiber.Ctx) error{
+	var products [] models.Product
+	var ctx = context.Background()
+
+	result, err := database.Cache.Get(ctx, "products_frontend").Result()
+
+	if err != nil {
+		// empty data in redis
+
+		database.DB.Find(&products)
+
+		bytes, err := json.Marshal(products)
+
+		if err != nil {
+			panic(err)
+		}
+
+		if errKey := database.Cache.Set(ctx, "products_frontend", bytes, 30*time.Minute).Err(); errKey != nil {
+			panic(errKey)
+		}
+	}else{
+		json.Unmarshal([]byte(result), &products)
+	}
+
+	return c.JSON(products)
 }
