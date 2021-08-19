@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"math/rand"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -117,3 +118,44 @@ func ProductsFrontend(c *fiber.Ctx) error{
 
 	return c.JSON(products)
 }
+
+func ProductsBackend(c *fiber.Ctx) error{
+	var products [] models.Product
+	var ctx = context.Background()
+
+	result, err := database.Cache.Get(ctx, "products_backend").Result()
+
+	if err != nil {
+		// empty data in redis
+
+		database.DB.Find(&products)
+
+		bytes, err := json.Marshal(products)
+
+		if err != nil {
+			panic(err)
+		}
+
+		database.Cache.Set(ctx, "products_backend", bytes, 30*time.Minute)
+
+	}else{
+		json.Unmarshal([]byte(result), &products)
+	}
+
+	var searchedProducts [] models.Product
+
+	if s := c.Query("s"); s != "" {
+		lower := strings.ToLower(s)
+		for _, prodct := range products {
+			if strings.Contains(strings.ToLower(prodct.Title), lower) ||
+				strings.Contains(prodct.Description, lower){
+				searchedProducts = append(searchedProducts, prodct)
+			}
+		}
+	}else{
+		searchedProducts = products
+	}
+
+	return c.JSON(searchedProducts)
+}
+
